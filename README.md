@@ -1,123 +1,122 @@
 # Unique Menu Icons
 
-Gives each of the 151 Gen 1 Pokémon a unique menu/team icon,
-instead of the game's default “group” icons (BALL, BIRD, BUG, FAIRY,
-GRASS, HELIX, MON, QUADRUPED, SNAKE, WATER) shared among multiple
-species.
+Dá a cada um dos 151 Pokémon de Gen 1 um ícone único de menu/equipe,
+em vez dos ícones de "grupo" padrão do jogo (BALL, BIRD, BUG, FAIRY,
+GRASS, HELIX, MON, QUADRUPED, SNAKE, WATER) compartilhados entre várias
+espécies.
 
-## Installation
+## Instalação
 
-1. Copy the entire `unique_menu_icons/` folder to the game’s mods folder:
+1. Copie a pasta `unique_menu_icons/` inteira para a pasta de mods do jogo:
    - **Windows:** `%APPDATA%\love\pokemon-love2d\mods\`
    - **macOS:** `~/Library/Application Support/LOVE/pokemon-love2d/mods/`
    - **Linux:** `~/.local/share/love/pokemon-love2d/mods/`
-2. Open the game, go to Options > Mods, and enable `unique_menu_icons`.
-3. Restart the game.
+2. Abra o jogo, vá em Options > Mods e ative `unique_menu_icons`.
+3. Reinicie o jogo.
 
-## About the Color of Icons and Battle Sprites (SGB/Advanced Modes)
+## Sobre a cor dos ícones e sprites de batalha (modos SGB/Advanced)
 
-In **SGB** and **ADVANCED** display modes, each of the 151
-species is assigned to one of **10 shared “monster”
-palettes** (`MEWMON`, `BLUEMON`, `REDMON`, `CYANMON`,
+Nos modos de exibição **SGB** e **ADVANCED**, cada uma das 151
+espécies é atribuída a uma de **10 paletas de "monstro"
+compartilhadas** (`MEWMON`, `BLUEMON`, `REDMON`, `CYANMON`,
 `PURPLEMON`, `BROWNMON`, `GREENMON`, `PINKMON`, `YELLOWMON`,
-`GREYMON`—the classic Gen 1 Super Game Boy color scheme, still in
-use here even in “Advanced” mode). This applies both to the
-menu icon column (which always renders using the `MEWMON` palette,
-hardcoded into the game regardless of species) and to the
-battle/Dex sprites for each Pokémon.
+`GREYMON` — o esquema clássico de Super Game Boy do Gen 1, ainda em
+uso aqui mesmo no modo "Advanced"). Isso vale tanto pra coluna de
+ícones do menu (que sempre renderiza através da paleta `MEWMON`,
+fixa no código do jogo, não importa a espécie) quanto pros sprites de
+batalha/Dex de cada Pokémon.
 
-This mod overrides these palettes with the authentic
-Gen 2 color scheme, extracted directly from an actual reference of the
-Gold/Silver/Crystal: white `(255,255,255)`, light red
-`(248,152,80)`, dark red `(248,56,32)`, and black `(0,0,0)`. This
-works in both modes:
+Este mod sobrescreve essas paletas com o esquema de cores autêntico
+do Gen 2, extraído direto de uma referência real dos ícones de
+Gold/Silver/Crystal: branco `(255,255,255)`, vermelho-claro
+`(248,152,80)`, vermelho-escuro `(248,56,32)` e preto `(0,0,0)`. Isso
+funciona nos dois modos:
 
-- **SGB** (the game's default): via `mod.content.palettes:override`.
-- **ADVANCED**: this mode does not read `mod.content.palettes`—it switches
-  the source to `PaletteFX.gbcPack()` (`require(“data.palettes_gbc”)`,
-  a standard, cached Lua module, unrelated to the mod
-  registry system). To work here as well, the mod provides this same
-  `require` and **modifies the table in memory directly** — since Lua modules
-  are cached for the entire process, it’s the same table that the
-  engine uses. **This is not the “official” mod API** (it reuses an
-  internal Lua mechanism), so there’s no guarantee it will continue
-  to work in future versions of the game, and it’s protected with
-  `pcall`: if it fails, the rest of the mod continues to function normally;
-  only Advanced would lose the adjustment.
+- **SGB** (o padrão do jogo): via `mod.content.palettes:override`.
+- **ADVANCED**: esse modo não lê `mod.content.palettes` — ele troca
+  de fonte pra `PaletteFX.gbcPack()` (`require("data.palettes_gbc")`,
+  um módulo Lua comum e cacheado, sem ligação com o sistema de
+  registries de mod). Pra funcionar aqui também, o mod dá esse mesmo
+  `require` e **muta a tabela em memória diretamente** — como módulos
+  Lua são cacheados pelo processo inteiro, é a mesma tabela que o
+  motor usa. **Isso não é a API "oficial" de mods** (é reaproveitar um
+  mecanismo interno do Lua), então não tem garantia de continuar
+  funcionando em versões futuras do jogo, e está protegido com
+  `pcall`: se falhar, o resto do mod continua funcionando normalmente,
+  só o Advanced ficaria sem o ajuste.
 
-The OG/OG INV/CLASSIC modes use a completely different mechanism
-and are not affected by any of this.
+Os modos OG/OG INV/CLASSIC usam outro mecanismo totalmente diferente
+e não são afetados por nada disso.
 
-### The “GBC PALLET ON/OFF” option
+### A opção "GBC PALLETE ON/OFF"
 
-The `MEWMON` palette is a special case: in addition to coloring the
-menu icon column and the battle/Dex sprite of **Mew** itself (and
-Mewtwo, and Jynx—the only three species that use this palette), it
-is also reused by the **title screen** (`src/ui/TitleState.lua`)
-and by **Professor Oak’s introductory speech** (`src/ui/OakSpeech.lua`)
-— both of which are hardcoded into the game engine, with no way to
-distinguish between “MEWMON for icons” and “MEWMON for the title.” There’s no way to
-override one without affecting the other.
+A paleta `MEWMON` é um caso especial: além de colorir a coluna de
+ícones do menu e o sprite de batalha/Dex do próprio **Mew** (e
+Mewtwo, e Jynx — as únicas 3 espécies que usam essa paleta), ela
+também é reaproveitada pela **tela de título** (`src/ui/TitleState.lua`)
+e pela **fala de introdução do Professor Oak** (`src/ui/OakSpeech.lua`)
+— chamadas hardcoded no motor do jogo, sem nenhuma forma de
+diferenciar "MEWMON pros ícones" de "MEWMON pro título". Não tem como
+sobrescrever uma sem afetar a outra.
 
-That's why there's a toggle option **right in the game**, under
-**Options > Mods > Unique Menu Icons > "GBC PALLET ON/OFF (CHANGES
-THE INTRO AND SOME SPRITES)"**:
+Por isso existe uma opção liga/desliga **direto no jogo**, em
+**Options > Mods > Unique Menu Icons > "GBC PALLETE ON/OFF (ALTERS
+INTRO AND SOME SPRITES)"**:
 
-| Option   | Menu icons + Mew | Title screen + Oak's intro |
+| Opção   | Ícones do menu + Mew | Tela de título + intro do Oak |
 | ------- | --------------------- | ------------------------------ |
-| On  | Gen 2 Red         | Also turn red (side effect) |
-| Off | Default game color   | Remain unchanged, original color          |
+| Ligada  | Vermelho Gen 2         | Também ficam vermelhos (efeito colateral) |
+| Desligada | Cor padrão do jogo   | Intactos, cor original          |
 
-It is enabled by default. Regardless of the option, the **other 9 palettes**
-(everything except `MEWMON`) are always overwritten—that is, all
-species except Mew/Mewtwo/Jynx always use the Gen 2 color scheme in
-battle/Dex sprites, regardless of the option’s value.
+Vem ligada por padrão. Independente da opção, as **outras 9 paletas**
+(tudo exceto `MEWMON`) são sempre sobrescritas — ou seja, todas as
+espécies exceto Mew/Mewtwo/Jynx sempre ficam no esquema Gen 2 nos
+sprites de batalha/Dex, com qualquer valor da opção.
 
-Change the option and restart the game to apply the changes (content registers
-“freeze” after boot). If for some reason the options system
-is unavailable, the mod uses `true` (MEWMON included) as a
-fallback.
+Mude a opção e reinicie o jogo pra aplicar (os registros de conteúdo
+"congelam" depois do boot). Se por algum motivo o sistema de opções
+não estiver disponível, o mod usa `true` (MEWMON incluído) como
+padrão de segurança.
 
-To change the colors themselves, edit the `RED_YELLOW_PALETTE` table, right
-above the option in `main.lua` (4 colors, from lightest to
-darkest).
+Pra trocar as cores em si, edite a tabela `RED_YELLOW_PALETTE`, logo
+acima da opção no `main.lua` (4 cores, do tom mais claro ao mais
+escuro).
 
-## What's Included
+## O que vem incluído
 
-- `manifest.json` — mod manifest (API 2).
-- `main.lua` — registers a unique icon (`mod.content.icons:register`)
-  for each of the 151 Gen 1 species and overrides the shared
-  “monster” palettes (9 or 10, depending on `INCLUDE_MEWMON`)
-  used by the menu icons and battle/Dex sprites.
-- `assets/icons/*.png` — the 151 icons (16×32, 2 frames of 16×16
-  stacked for the menu’s “bounce” animation), in 4 shades of gray
-  following the engine’s “pixel contract.”
+- `manifest.json` — manifesto do mod (api 2).
+- `main.lua` — registra um ícone único (`mod.content.icons:register`)
+  para cada uma das 151 espécies de Gen 1 e sobrescreve as paletas de
+  "monstro" compartilhadas (9 ou 10, dependendo do `INCLUDE_MEWMON`)
+  usadas pelos ícones do menu e pelos sprites de batalha/Dex.
+- `assets/icons/*.png` — os 151 ícones (16×32, 2 frames de 16×16
+  empilhados para a animação de "bounce" do menu), em 4 tons de cinza
+  seguindo o "pixel contract" do engine.
 
-## How to Replace with Different Art
+## Como trocar por outra arte
 
-Overwrite the species file, maintaining the 4-shade-of-gray format
-(white `255`, light `170`, dark `85`, black `0`):
+Sobrescreva o arquivo da espécie, mantendo o formato 4 tons de cinza
+(branco `255`, claro `170`, escuro `85`, preto `0`):
 
 ```
 assets/icons/PIKACHU.png
 assets/icons/CHARIZARD.png
 ```
 
-You don’t need to edit `main.lua`—the path is already registered. If a
-file doesn’t exist, the mod simply skips that species and it
-keeps the vanilla icon (it doesn’t break the loading process).
+Não precisa mexer no `main.lua` — o caminho já está registrado. Se um
+arquivo não existir, o mod simplesmente pula aquela espécie e ela
+mantém o ícone vanilla (não quebra o carregamento).
 
-## List of Species
+## Lista de espécies
 
-All 151 Gen 1 species (default internal names: `NIDORAN_F`,
-`NIDORAN_M`, `MR_MIME`, `FARFETCHD`, etc.) are listed at the top of
+Todas as 151 espécies de Gen 1 (nomes internos padrão: `NIDORAN_F`,
+`NIDORAN_M`, `MR_MIME`, `FARFETCHD`, etc.) estão listadas no topo do
 `main.lua`.
 
-## Credits
+## Créditos
 
-The icon sprites used in this mod are from the **MiniDex** set,
-created by **Chamber**, **Solo0993**, **Blue Emerald**, **Lake**,
-**Neslug**, and **Pikachu25**. All credit for the original artwork goes to the
-authors; this mod only converts/integrates the art into the
-gen1recomp format and recolors the palette.
-
+Os sprites de ícone usados neste mod são do conjunto **MiniDex**,
+criado por **Chamber**, **Solo0993**, **Blue Emerald**, **Lake**,
+**Neslug** e **Pikachu25**. Todo o crédito da arte original é dos
+autores; este mod só faz a conversão/integração pro formato do
+gen1recomp e a recolorização de paleta.
