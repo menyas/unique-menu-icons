@@ -7,12 +7,7 @@ species.
 
 ## Installation
 
-1. Copy the entire `unique_menu_icons/` folder to the game’s mods folder:
-   - **Windows:** `%APPDATA%\love\pokemon-love2d\mods\`
-   - **macOS:** `~/Library/Application Support/LOVE/pokemon-love2d/mods/`
-   - **Linux:** `~/.local/share/love/pokemon-love2d/mods/`
-2. Open the game, go to Options > Mods, and enable `unique_menu_icons`.
-3. Restart the game.
+Simply drag-and-drop the .zip file containing the mod inside the launcher
 
 ## About the Color of Icons and Battle Sprites (SGB/Advanced Modes)
 
