@@ -1,8 +1,8 @@
 {
   "id": "unique_menu_icons",
-  "name": "Unique Menu Icons",
-  "version": "1.2.0",
-  "description": "Gives every Gen 1 Pokemon its own unique party/menu icon instead of the vanilla shared body-type icons (QUADRUPED, BIRD, SNAKE, etc); includes vanilla icon colors and recolored to the authentic Gen 2 red palette (SGB + Advanced) as a toggle (has a side effect of recoloring some other sprites). Icon art: MiniDex sprites by Chamber, Solo0993, Blue Emerald, Lake, Neslug and Pikachu25.",
+  "name": "Unique Menu Icons (Gen 2 MEWMON)",
+  "version": "2.2.0",
+  "description": "Gives every Gen 1 Pokemon its own unique party/menu icon instead of the vanilla shared body-type icons (QUADRUPED, BIRD, SNAKE, etc). Only the MEWMON palette (menu icon column, Mew/Mewtwo/Jynx) is recolored to the authentic Gen 2 red scheme, in both SGB and Advanced display modes; all other species keep their normal colors. Toggle via the GBC PALLETE ON/OFF option (also affects the title screen and Oak's intro, which share the MEWMON slot). Icon art: MiniDex sprites by Chamber, Solo0993, Blue Emerald, Lake, Neslug and Pikachu25.",
   "entry": "main.lua",
   "api": 2
 }
