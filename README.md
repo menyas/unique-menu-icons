@@ -6,12 +6,7 @@ HELIX, MON, QUADRUPED, SNAKE, WATER).
 
 ## Installation
 
-1. Copy the whole `unique_menu_icons/` folder into the game's mods folder:
-   - **Windows:** `%APPDATA%\love\pokemon-love2d\mods\`
-   - **macOS:** `~/Library/Application Support/LOVE/pokemon-love2d/mods/`
-   - **Linux:** `~/.local/share/love/pokemon-love2d/mods/`
-2. Open the game, go to Options > Mods, and enable `unique_menu_icons`.
-3. Restart the game.
+Simply drag-and-drop the .zip file into the mods section of the gen1recomp launcher. Restart the game for color pallete changes to be effective.
 
 ## Color modes
 
