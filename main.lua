@@ -7,41 +7,49 @@
 -- sharing the vanilla body-type icons (BALL, BIRD, BUG, FAIRY, GRASS,
 -- HELIX, MON, QUADRUPED, SNAKE, WATER).
 --
--- Each icon is a 16x32 PNG: two 16x16 frames stacked vertically for the
--- party-menu bounce animation (frame = { image, frames = 2 }). Icon art
--- follows the engine's 4-shade pixel contract (white/light/dark/black
--- grayscale) rather than literal RGB.
+-- Three color variants, selectable in-game (Options > Mods > Unique
+-- Menu Icons > "ICON COLOR MODE"):
 --
--- COLOR: only the "MEWMON" shared palette is overridden (to the
--- authentic Gen 2 red scheme, sampled from real Gen 2 icon art). All
--- other shared species palettes (BLUEMON, REDMON, CYANMON, PURPLEMON,
--- BROWNMON, GREENMON, PINKMON, YELLOWMON, GREYMON) are left at their
--- normal game values -- only Mew, Mewtwo, and Jynx (the species that
--- map to MEWMON) plus the menu icon column (hardcoded to MEWMON in
--- src/ui/PartyMenu.lua) get the Gen 2 red look. Every other species
--- keeps its normal in-game colors.
+--   1. ORIGINAL (default) -- 4-shade grayscale contract art, no
+--      trueColor patch, no palette override. Icons are recolored by
+--      whichever display palette is active in Options (OG, SGB,
+--      Advanced, Classic, etc), exactly like vanilla icons. For
+--      players who want the unique silhouettes but don't want their
+--      chosen display palette touched or bypassed at all.
 --
--- Side effect: MEWMON is also reused by the title screen
--- (src/ui/TitleState.lua) and Oak's intro speech (src/ui/OakSpeech.lua)
--- -- both hardcoded to "MEWMON" with no way to distinguish that from
--- the icon-column usage -- so those also turn red as a consequence.
+--   2. GBC RED -- every icon in the same authentic Gen 2 red/white/
+--      black duotone (sampled from real Gen 2 icon art), via the
+--      trueColor zone patch (see below) -- NOT via a MEWMON palette
+--      override like earlier versions of this mod did, so the title
+--      screen and Oak's intro speech are unaffected.
 --
--- Works in both display modes:
---   SGB      -> via mod.content.palettes:override("MEWMON", ...)
---   ADVANCED -> this mode reads PaletteFX.gbcPack() (a plain
---               require("data.palettes_gbc"), cached, unrelated to
---               mod.content.palettes) instead, so this mod also
---               requires that same module and mutates its MEWMON
---               entry in place -- Lua caches modules process-wide,
---               so this is the same table the engine reads. Not part
---               of the official mod API; wrapped in pcall so a
---               failure here can't break icon registration.
--- OG/OG INV/CLASSIC use an unrelated mechanism and are unaffected.
+--   3. UNIQUE COLORS -- every icon in its own full, real color (also
+--      via the trueColor zone patch).
 --
--- Exposed as an in-game toggle (Options > Mods > Unique Menu Icons ->
--- "GBC PALLETE ON/OFF (ALTERS INTRO AND SOME SPRITES)") so you can
--- turn this off without editing the file. Defaults to ON. Takes
--- effect on restart (content registries freeze after boot).
+-- HOW THE trueColor PATCH WORKS (modes 2 and 3 only): the icons
+-- registry (R.icons in src/mods/Schemas.lua) has no trueColor field,
+-- and the menu icon column always renders through a single shared,
+-- hardcoded palette ("MEWMON", src/ui/PartyMenu.lua) that also colors
+-- the title screen and Oak's intro speech -- so there is no clean way
+-- to get accurate icon colors through the palette system itself.
+-- Instead, this mod uses the same "trueColor zone" mechanism vanilla
+-- trueColor sprites/tilesets use (src/render/PaletteFX.lua):
+-- PaletteFX.markTrueColor(x, y, w, h) queues a screen rect (pixel
+-- coordinates) that gets re-blitted UNSHADED on top of the normal
+-- colorized pass at the end of the frame. We wrap PartyMenu:draw()
+-- (a real table method, safely monkey-patchable -- unlike the private
+-- local drawIcon() function it calls internally) and, right after the
+-- original draw runs, mark a trueColor rect for each party slot's
+-- icon at its known screen position: x=8, y=PartyMenu.entryY(i)=
+-- (i-1)*16, size 16x16.
+--
+-- This patch is NOT part of the documented/official mod API -- no
+-- schema field covers it, so there's no guarantee it keeps working
+-- across future engine versions. It's the same category of technique
+-- the community "Followers EX" mod uses elsewhere in this engine.
+-- Wrapped in pcall so a failure here can't break icon registration --
+-- worst case, icons just render through the normal palette instead of
+-- true color. Mode 1 never installs this patch at all.
 
 local SPECIES = {
   "BULBASAUR",
@@ -197,31 +205,50 @@ local SPECIES = {
   "MEW",
 }
 
--- 4 colors, lightest -> darkest. Sampled from real Gen 2 icon art.
-local RED_YELLOW_PALETTE = {
-  { 255, 255, 255 },  -- shade 0 (lightest / background)
-  { 248, 152, 80 },   -- shade 1 (light fill)  -> Gen 2 light red/orange
-  { 248, 56, 32 },     -- shade 2 (dark fill)   -> Gen 2 dark red
-  { 0, 0, 0 },         -- shade 3 (darkest / outline)
+local MODES = {
+  { id = "original",      label = "ORIGINAL (no palette changes)",     folder = "assets/icons_original" },
+  { id = "gbc_red",        label = "GBC RED (Gen 2 style, all mons)",   folder = "assets/icons_gbc_red" },
+  { id = "unique_colors",  label = "UNIQUE COLORS (real per-species)",  folder = "assets/icons_color" },
 }
+local DEFAULT_MODE = "original"
+
+local function findMode(id)
+  for _, m in ipairs(MODES) do
+    if m.id == id then return m end
+  end
+  return nil
+end
 
 return function(mod)
+  local choices = {}
+  for _, m in ipairs(MODES) do
+    choices[#choices + 1] = { m.label, m.id }
+  end
+
   mod.options:define({
     {
-      key = "gbc_palette_on",
-      label = "GBC PALLETE ON/OFF (ALTERS INTRO AND SOME SPRITES)",
-      type = "toggle",
-      default = true,
+      key = "icon_color_mode",
+      label = "ICON COLOR MODE",
+      type = "choice",
+      default = DEFAULT_MODE,
+      choices = choices,
     },
   })
 
-  local gbcPaletteOn = mod.options:get("gbc_palette_on")
-  if gbcPaletteOn == nil then gbcPaletteOn = true end
+  local modeId = mod.options:get("icon_color_mode")
+  local mode = findMode(modeId) or findMode(DEFAULT_MODE)
 
   local registered, skipped = 0, 0
+  local hasArt = {}
 
   for _, name in ipairs(SPECIES) do
-    local iconPath = "assets/icons/" .. name .. ".png"
+    local iconPath = mode.folder .. "/" .. name .. ".png"
+
+    -- Fall back to the default mode's art if the selected mode is
+    -- somehow missing a file, so the mod never registers a broken path.
+    if not mod:read(iconPath) then
+      iconPath = findMode(DEFAULT_MODE).folder .. "/" .. name .. ".png"
+    end
 
     if mod:read(iconPath) then
       mod.content.icons:register(name, {
@@ -229,45 +256,48 @@ return function(mod)
         frames = 2,
       })
       registered = registered + 1
+      hasArt[name] = true
     else
       skipped = skipped + 1
     end
   end
 
-  local sgbOk, advOk = false, false
+  -- Only modes 2 and 3 need the trueColor patch. Mode 1 relies on the
+  -- normal palette-driven recolor, exactly like vanilla icons, and
+  -- deliberately never touches PartyMenu or PaletteFX at all.
+  local patchOk, patchErr = true, nil
+  if mode.id ~= "original" then
+    patchOk, patchErr = pcall(function()
+      local PartyMenu = require("src.ui.PartyMenu")
+      local PaletteFX = require("src.render.PaletteFX")
 
-  if gbcPaletteOn then
-    -- SGB mode: reads mod.content.palettes directly.
-    local ok, sgbErr = pcall(function()
-      mod.content.palettes:override("MEWMON", RED_YELLOW_PALETTE)
-    end)
-    sgbOk = ok
-    if not ok then
-      mod.log:warn("unique_menu_icons: failed to override MEWMON (SGB): %s", tostring(sgbErr))
-    end
+      if PartyMenu._uniqueMenuIconsTrueColorWrapped then return end
 
-    -- ADVANCED mode: reads a separate, non-moddable pack loaded via a
-    -- plain Lua require(), cached process-wide. Mutate that same table
-    -- in place instead. Not part of the official mod API -- see the
-    -- comment at the top of this file for details. Wrapped in pcall so
-    -- a failure here can't break icon registration or the SGB override.
-    local ok2, advErr = pcall(function()
-      local gbcPack = require("data.palettes_gbc")
-      if type(gbcPack) == "table" and type(gbcPack.palettes) == "table"
-          and gbcPack.palettes["MEWMON"] then
-        gbcPack.palettes["MEWMON"] = RED_YELLOW_PALETTE
-        return true
+      local origDraw = PartyMenu.draw
+      function PartyMenu:draw(...)
+        origDraw(self, ...)
+
+        local party = self.party or (self.game and self.game.save and self.game.save.party)
+        if type(party) ~= "table" then return end
+
+        for i, mon in ipairs(party) do
+          if mon and hasArt[mon.species] then
+            local y = PartyMenu.entryY(i)
+            PaletteFX.markTrueColor(8, y, 16, 16)
+          end
+        end
       end
-      error("data.palettes_gbc module shape unexpected (no .palettes.MEWMON)")
+
+      PartyMenu._uniqueMenuIconsTrueColorWrapped = true
     end)
-    advOk = ok2
-    if not ok2 then
-      mod.log:warn("unique_menu_icons: failed to patch MEWMON (ADVANCED): %s", tostring(advErr))
+
+    if not patchOk then
+      mod.log:warn("unique_menu_icons: trueColor icon patch failed: %s", tostring(patchErr))
     end
   end
 
   mod.log:info(
-    "unique_menu_icons: registered %d unique icons (%d skipped), gbc_palette_on=%s (SGB: %s, ADVANCED: %s)",
-    registered, skipped, tostring(gbcPaletteOn), tostring(sgbOk), tostring(advOk)
+    "unique_menu_icons: mode=%s, registered %d unique icons (%d skipped), trueColor patch: %s",
+    mode.id, registered, skipped, mode.id == "original" and "not needed" or tostring(patchOk)
   )
 end
