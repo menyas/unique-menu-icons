@@ -15,12 +15,27 @@ choices:
 
 | Mode | What you get | Mechanism |
 | ---- | ------------- | --------- |
-| **ORIGINAL** (default) | Unique silhouettes, colored by whichever display palette you have active in Options (OG, SGB, Advanced, Classic...), exactly like vanilla icons | Plain 4-shade grayscale icon art, no patch, no palette override |
+| **ORIGINAL** (default) | Unique silhouettes, colored by whichever display palette you have active in Options (OG, SGB, Advanced, Classic...), exactly like vanilla icons | 2-tone icon art (fill + outline), no patch, no palette override |
 | **GBC RED** | Every icon in the same authentic Gen 2 red/white/black duotone, regardless of display palette | trueColor screen-zone patch (see below) |
 | **UNIQUE COLORS** | Every icon in its own real, full color | trueColor screen-zone patch (see below) |
 
 Switch modes and restart the game to apply (content registries freeze
 after boot).
+
+### Why ORIGINAL mode art only uses 3 tones (not 4-shade)
+
+Party menu icons are hardware OBJs, and the game bakes them through
+`OBP0` (`src/ui/PartyMenu.lua`): OBJ color 1 shows as DMG shade 0
+(white/lightest), OBJ color 2 as shade 1, and OBJ color 3 as shade 3
+(outline) -- **shade 2 is unreachable for an icon, ever**. Built-in
+icons get this bake automatically; a mod's own image is authored
+directly, with no bake, so if it uses shade 2 (grayscale value 85)
+that pixel really does render in the active palette's shade-2 color
+-- under the default `MEWMON` palette that's purple, which is why an
+early version of this mod's ORIGINAL-mode art showed purple that no
+vanilla icon ever would. ORIGINAL mode's art only uses shade 0 (255,
+highlight), shade 1 (170, fill), and shade 3 (0, outline) -- the only
+three tones a real icon OBJ can actually display.
 
 ### Why three separate art sets instead of one
 
@@ -71,7 +86,7 @@ color.
   unique icon for each of the 151 Gen 1 species from the selected
   mode's folder, and (for GBC RED / UNIQUE COLORS only) patches
   `PartyMenu:draw()` to mark each icon as a trueColor zone.
-- `assets/icons_original/*.png` — 4-shade grayscale contract art.
+- `assets/icons_original/*.png` — 3-tone grayscale art (highlight + fill + outline).
 - `assets/icons_gbc_red/*.png` — Gen 2 red/white/black duotone, literal RGB.
 - `assets/icons_color/*.png` — full, real per-species color, literal RGB.
 
@@ -81,10 +96,11 @@ menu's bounce animation).
 ## Swapping in different art
 
 Overwrite the species' file inside whichever mode's folder you're
-using. For `icons_original`, keep the 4-shade grayscale format (white
-`255`, light `170`, dark `85`, black `0`) so the normal palette recolor
-keeps working; `icons_gbc_red` and `icons_color` can use literal color
-freely, since they render through the trueColor patch.
+using. For `icons_original`, keep to the 3 tones a real icon OBJ can
+show: highlight pixels at `255`, fill pixels at `170`, and outline
+pixels at `0` (see the note above on why) -- so the normal palette
+recolor keeps working; `icons_gbc_red` and `icons_color` can use
+literal color freely, since they render through the trueColor patch.
 
 ```
 assets/icons_original/PIKACHU.png
