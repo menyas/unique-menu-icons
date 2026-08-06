@@ -1,0 +1,14 @@
+{
+  "id": "unique_menu_icons",
+  "title": "Unique Menu Icons",
+  "author": "menyas",
+  "version": "1.3.1",
+  "categories": ["ART", "UI"],
+  "repo": "https://github.com/menyas/unique-menu-icons",
+  "github": "menyas/unique-menu-icons",
+  "summary": "Gives every Gen 1 Pokemon its own unique party/menu icon instead of the vanilla shared body-type icons.",
+  "tags": ["icons", "party menu", "sprites", "minidex"],
+  "license": "Unlicense",
+  "api": 2,
+  "automatic_version_check": true
+}
