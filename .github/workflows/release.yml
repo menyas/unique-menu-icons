@@ -1,0 +1,23 @@
+name: Release mod zip
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build zip
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          zip -r "unique_menu_icons-${VERSION}.zip" main.lua manifest.json README.md assets
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: unique_menu_icons-*.zip
