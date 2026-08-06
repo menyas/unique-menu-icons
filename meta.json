@@ -10,5 +10,6 @@
   "tags": ["icons", "party menu", "sprites", "minidex"],
   "license": "Unlicense",
   "api": 2,
+  "permissions": ["engine_internals"],
   "automatic_version_check": true
 }
