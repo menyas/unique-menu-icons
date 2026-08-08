@@ -1,7 +1,7 @@
 {
   "id": "unique_menu_icons",
   "name": "Unique Menu Icons",
-  "version": "1.3.1",
+  "version": "1.3.1h",
   "description": "Gives every Gen 1 Pokemon its own unique party/menu icon instead of the vanilla shared body-type icons (QUADRUPED, BIRD, SNAKE, etc). Pick a color mode in Options > Mods: ORIGINAL, GBC RED, or UNIQUE COLORS. Modes 2 and 3 use a trueColor screen-zone patch instead of overriding any shared palette, so the title screen and Oak's intro are never affected, however they may impact some other mods such as the DexNav or the PC Grid UI. Mod also not comatible with Followers EX, as they both essentially do the same thing. Icon art: MiniDex sprites by Chamber, Solo0993, Blue Emerald, Lake, Neslug and Pikachu25.",
   "entry": "main.lua",
   "github": "menyas/unique-menu-icons",
