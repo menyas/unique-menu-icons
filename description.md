@@ -2,7 +2,8 @@
 
 Gives every Gen 1 Pokemon its own unique party/menu icon instead of the
 vanilla shared body-type icons (BALL, BIRD, BUG, FAIRY, GRASS, HELIX, MON,
-QUADRUPED, SNAKE, WATER).
+QUADRUPED, SNAKE, WATER). As for 1.4.0, also includes Gen 2 Pokemon, for
+compatibility with certain mods.
 
 ## Color modes
 
