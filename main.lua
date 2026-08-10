@@ -203,6 +203,89 @@ local SPECIES = {
   "DRAGONITE",
   "MEWTWO",
   "MEW",
+
+  -- Johto (#152-251). Registered the same way the original 151 always
+  -- were: if the matching PNG isn't in assets/<mode>/ yet, the loop
+  -- below just skips it and that species keeps whatever fallback icon
+  -- the active overhaul mod already draws. No code changes needed once
+  -- the art is dropped in -- same as how this mod's Gen 1 set grew
+  -- species-by-species from the start.
+  --
+  -- Tested for icon-registry compatibility with three overhaul mods
+  -- that add these species: Crystal 251, Kanto Ascendant, and Kanto
+  -- Reforged. Ascendant and Reforged both leave the party-menu icon
+  -- registry untouched for Johto species (Reforged's own README calls
+  -- this out directly: new species "borrow Gen 1 menu icon classes"),
+  -- so registering real art here for these names is a straightforward
+  -- upgrade over their shared-silhouette fallback, exactly like it is
+  -- for the original 151. Crystal 251 generates its own ROM-derived
+  -- icons for its Day Care display specifically; this hasn't been
+  -- cross-checked against its Day Care rendering path yet.
+  "CHIKORITA", "BAYLEEF", "MEGANIUM",
+  "CYNDAQUIL", "QUILAVA", "TYPHLOSION",
+  "TOTODILE", "CROCONAW", "FERALIGATR",
+  "SENTRET", "FURRET",
+  "HOOTHOOT", "NOCTOWL",
+  "LEDYBA", "LEDIAN",
+  "SPINARAK", "ARIADOS",
+  "CROBAT",
+  "CHINCHOU", "LANTURN",
+  "PICHU",
+  "CLEFFA",
+  "IGGLYBUFF",
+  "TOGEPI", "TOGETIC",
+  "NATU", "XATU",
+  "MAREEP", "FLAAFFY", "AMPHAROS",
+  "BELLOSSOM",
+  "MARILL", "AZUMARILL",
+  "SUDOWOODO",
+  "POLITOED",
+  "HOPPIP", "SKIPLOOM", "JUMPLUFF",
+  "AIPOM",
+  "SUNKERN", "SUNFLORA",
+  "YANMA",
+  "WOOPER", "QUAGSIRE",
+  "ESPEON", "UMBREON",
+  "MURKROW",
+  "SLOWKING",
+  "MISDREAVUS",
+  "UNOWN",
+  "WOBBUFFET",
+  "GIRAFARIG",
+  "PINECO", "FORRETRESS",
+  "DUNSPARCE",
+  "GLIGAR",
+  "STEELIX",
+  "SNUBBULL", "GRANBULL",
+  "QWILFISH",
+  "SCIZOR",
+  "SHUCKLE",
+  "HERACROSS",
+  "SNEASEL",
+  "TEDDIURSA", "URSARING",
+  "SLUGMA", "MAGCARGO",
+  "SWINUB", "PILOSWINE",
+  "CORSOLA",
+  "REMORAID", "OCTILLERY",
+  "DELIBIRD",
+  "MANTINE",
+  "SKARMORY",
+  "HOUNDOUR", "HOUNDOOM",
+  "KINGDRA",
+  "PHANPY", "DONPHAN",
+  "PORYGON2",
+  "STANTLER",
+  "SMEARGLE",
+  "TYROGUE", "HITMONTOP",
+  "SMOOCHUM",
+  "ELEKID",
+  "MAGBY",
+  "MILTANK",
+  "BLISSEY",
+  "RAIKOU", "ENTEI", "SUICUNE",
+  "LARVITAR", "PUPITAR", "TYRANITAR",
+  "LUGIA", "HO_OH",
+  "CELEBI",
 }
 
 local MODES = {
@@ -251,7 +334,13 @@ return function(mod)
     end
 
     if mod:read(iconPath) then
-      mod.content.icons:register(name, {
+      -- Always override, never register: another mod (PokePCFollowers,
+      -- Kanto Reforged, etc.) may register/patch this same species id.
+      -- register() would collide with whatever another mod queues for
+      -- this id at merge time -- see CHIKORITA/Kanto Reforged and
+      -- BULBASAUR/PokePCFollowers reports. override() has no existence
+      -- check, so it's safe unconditionally and always wins the merge.
+      mod.content.icons:override(name, {
         image = mod.assets:path(iconPath),
         frames = 2,
       })
