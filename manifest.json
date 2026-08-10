@@ -7,6 +7,7 @@
   "github": "menyas/unique-menu-icons",
   "permissions": ["engine_internals"],
   "optional_dependencies": ["PokePCFollowers_VoxelMerge", "Kanto-Reforged", "trainer_rematch", "CRYSTAL_251"],
+  "incompatible": ["FOLLOWERS_EX"],
   "api": 2
 }
 
