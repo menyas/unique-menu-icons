@@ -2,7 +2,8 @@
 
 Gives every Gen 1 Pokemon its own unique party/menu icon instead of
 the vanilla shared body-type icons (BALL, BIRD, BUG, FAIRY, GRASS,
-HELIX, MON, QUADRUPED, SNAKE, WATER).
+HELIX, MON, QUADRUPED, SNAKE, WATER). As for 1.4.0, also includes
+Gen 2 Pokemon, for compatibility with certain mods.
 
 ## Installation
 
@@ -114,7 +115,7 @@ species just keeps its vanilla icon.
 
 ## Species list
 
-All 151 Gen 1 species (standard internal names: `NIDORAN_F`,
+All 251 Gen 1 and 2 species (standard internal names: `NIDORAN_F`,
 `NIDORAN_M`, `MR_MIME`, `FARFETCHD`, etc.) are listed at the top of
 `main.lua`.
 
