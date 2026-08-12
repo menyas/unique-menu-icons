@@ -2,12 +2,21 @@
 
 Gives every Gen 1 Pokemon its own unique party/menu icon instead of
 the vanilla shared body-type icons (BALL, BIRD, BUG, FAIRY, GRASS,
-HELIX, MON, QUADRUPED, SNAKE, WATER). As for 1.4.0, also includes
-Gen 2 Pokemon, for compatibility with certain mods.
+HELIX, MON, QUADRUPED, SNAKE, WATER). Version 1.5.0 supports all 251
+Gen 1 and Gen 2 Pokemon on Red, Blue, Yellow, and Gold.
 
 ## Installation
 
 Simply drag-and-drop the .zip file into the mods section of the gen1recomp launcher. Restart the game for color pallete changes to be effective.
+
+### PokePCFollowers compatibility
+
+Unique Menu Icons 1.5.0 and PokePCFollowers 0.8.1 can be enabled together.
+Unique Menu Icons owns the party-menu icons and their color mode; PokePC keeps
+the overworld follower and its `FOLLOWER` party action. The optional dependency
+loads this mod after PokePC so the icon assignment is deterministic. Do not use
+Unique Menu Icons 1.4.0 for this combination: that release declares PokePC
+incompatible in its manifest.
 
 ## Color modes
 
@@ -40,12 +49,12 @@ three tones a real icon OBJ can actually display.
 
 ### Why three separate art sets instead of one
 
-The menu icon column always renders through a single shared,
-hardcoded palette ("MEWMON", `src/ui/PartyMenu.lua`), no matter which
-species is shown — and that same palette also colors the title screen
-and Oak's intro speech. Earlier versions of this mod got Gen 2 colors
-by overriding that palette directly, which meant the title screen and
-intro turned red too as a side effect.
+On Gen 1, the menu icon column renders through a single shared, hardcoded
+palette ("MEWMON", `src/ui/PartyMenu.lua`), no matter which species is shown
+— and that same palette also colors the title screen and Oak's intro speech.
+Gold likewise applies its party-menu OBJ palette to every icon. Earlier
+versions of this mod got Gen 2 colors by overriding the Gen 1 palette directly,
+which meant the title screen and intro turned red too as a side effect.
 
 **GBC RED** and **UNIQUE COLORS** avoid that entirely by using the
 same **trueColor zone** mechanism the engine's own trueColor
@@ -62,9 +71,9 @@ display palette is active. Since `R.icons` (the mod content registry
 for menu icons) has no `trueColor` field to opt into this directly,
 the mod wraps `PartyMenu:draw()` — a real table method, so it's safely
 monkey-patchable, unlike the private `drawIcon()` function it calls
-internally — and, right after the original draw runs, marks a
-trueColor rect for each party slot's icon at its known screen
-position (`x = 8`, `y = PartyMenu.entryY(i) = (i-1)*16`, size 16x16).
+internally — and, right after the original draw runs, marks a 16x16 trueColor
+rect at each icon's generation-specific position. On Gold this follows both
+the selected icon's horizontal shift and its two-pixel bounce.
 
 **ORIGINAL never installs this patch at all** — it's the plain,
 fully-vanilla-behaved option for players who don't want any palette
@@ -84,28 +93,28 @@ color.
 
 - `manifest.json` — mod manifest (api 2).
 - `main.lua` — defines the `ICON COLOR MODE` option, registers a
-  unique icon for each of the 151 Gen 1 species from the selected
+  unique icon for each of the 251 Gen 1 and Gen 2 species from the selected
   mode's folder, and (for GBC RED / UNIQUE COLORS only) patches
   `PartyMenu:draw()` to mark each icon as a trueColor zone.
-- `assets/icons_original/*.png` — 3-tone grayscale art (highlight + fill + outline).
-- `assets/icons_gbc_red/*.png` — Gen 2 red/white/black duotone, literal RGB.
-- `assets/icons_color/*.png` — full, real per-species color, literal RGB.
+- `assets/icon_original/*.png` — 3-tone grayscale art (highlight + fill + outline).
+- `assets/icon_gbc_red/*.png` — Gen 2 red/white/black duotone, literal RGB.
+- `assets/icon_color/*.png` — full, real per-species color, literal RGB.
 
-All three are 151 icons each, 16x32 (two 16x16 frames stacked for the
+All three are 251 icons each, 16x32 (two 16x16 frames stacked for the
 menu's bounce animation).
 
 ## Swapping in different art
 
 Overwrite the species' file inside whichever mode's folder you're
-using. For `icons_original`, keep to the 3 tones a real icon OBJ can
+using. For `icon_original`, keep to the 3 tones a real icon OBJ can
 show: highlight pixels at `255`, fill pixels at `170`, and outline
 pixels at `0` (see the note above on why) -- so the normal palette
-recolor keeps working; `icons_gbc_red` and `icons_color` can use
+recolor keeps working; `icon_gbc_red` and `icon_color` can use
 literal color freely, since they render through the trueColor patch.
 
 ```
-assets/icons_original/PIKACHU.png
-assets/icons_color/CHARIZARD.png
+assets/icon_original/PIKACHU.png
+assets/icon_color/CHARIZARD.png
 ```
 
 No need to touch `main.lua` — the paths are already registered. If a

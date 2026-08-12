@@ -1,13 +1,13 @@
 {
   "id": "unique_menu_icons",
   "name": "Unique Menu Icons",
-  "version": "1.4.0",
-  "description": "Gives every Gen 1 and Gen 2 (Johto) Pokemon its own unique party/menu icon instead of the vanilla shared body-type icons (QUADRUPED, BIRD, SNAKE, etc). Pick a color mode in Options > Mods: ORIGINAL, GBC RED, or UNIQUE COLORS. Modes 2 and 3 use a trueColor screen-zone patch instead of overriding any shared palette, so the title screen and Oak's intro are never affected, however they may impact some other mods such as the DexNav or the PC Grid UI. Icon registration now always uses override() instead of register(), so it can no longer crash the mod manager when another mod (PokePCFollowers, Kanto Reforged, Kanto Ascendant, Crystal 251, etc.) also registers/patches the same species icon id -- previously this hit a 'icons already registered' error. If PokePCFollowers (PokePCFollowers_VoxelMerge), Kanto Reforged (Kanto-Reforged), Kanto Ascendant (trainer_rematch), or Crystal 251 (CRYSTAL_251) are also enabled, this mod loads after them and its icons win in the party menu. Note: this only prevents US from crashing -- a mod that still uses register() for the same icon id can still fail to load itself when this mod is active; see this mod's README/issues for details. Icon art: MiniDex sprites by Chamber, Solo0993, Blue Emerald, Lake, Neslug and Pikachu25.",
+  "version": "1.5.0",
+  "description": "Unique party/menu icons for all 251 Gen 1 and Gen 2 Pokemon, with ORIGINAL, GBC RED, and UNIQUE COLORS modes. Supports Red, Blue, Yellow, and Gold. When PokePCFollowers is enabled, this mod loads after it and owns the party-menu icons while PokePC continues to provide overworld followers.",
   "entry": "main.lua",
   "github": "menyas/unique-menu-icons",
+  "games": ["gen1", "gen2"],
   "permissions": ["engine_internals"],
   "optional_dependencies": ["PokePCFollowers_VoxelMerge", "Kanto-Reforged", "trainer_rematch", "CRYSTAL_251"],
-  "incompatible": ["PokePCFollowers_VoxelMerge"],
   "api": 2
 }
 

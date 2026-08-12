@@ -3,7 +3,7 @@
 -- Icon art: MiniDex sprites by Chamber, Solo0993, Blue Emerald, Lake,
 -- Neslug and Pikachu25. All credit for the original art goes to them.
 --
--- Gives every Gen 1 species its own unique party/menu icon instead of
+-- Gives every Gen 1 and Gen 2 species its own unique party/menu icon instead of
 -- sharing the vanilla body-type icons (BALL, BIRD, BUG, FAIRY, GRASS,
 -- HELIX, MON, QUADRUPED, SNAKE, WATER).
 --
@@ -289,9 +289,9 @@ local SPECIES = {
 }
 
 local MODES = {
-  { id = "original",      label = "ORIGINAL (no palette changes)",     folder = "assets/icons_original" },
-  { id = "gbc_red",        label = "GBC RED (Gen 2 style, all mons)",   folder = "assets/icons_gbc_red" },
-  { id = "unique_colors",  label = "UNIQUE COLORS (real per-species)",  folder = "assets/icons_color" },
+  { id = "original",      label = "ORIGINAL (no palette changes)",     folder = "assets/icon_original" },
+  { id = "gbc_red",       label = "GBC RED (Gen 2 style, all mons)",   folder = "assets/icon_gbc_red" },
+  { id = "unique_colors", label = "UNIQUE COLORS (real per-species)", folder = "assets/icon_color" },
 }
 local DEFAULT_MODE = "original"
 
@@ -303,6 +303,14 @@ local function findMode(id)
 end
 
 return function(mod)
+  local GameVersion = require("src.core.GameVersion")
+  local isGen2 = GameVersion.generation() == 2
+
+  -- Compatibility capability consumed by PokePCFollowers 0.8.1+.  The
+  -- optional dependency keeps this mod later in the load order, so its icon
+  -- assignments win while PokePC retains ownership of overworld followers.
+  if mod.exports then mod.exports.ownsPartyIcons = true end
+
   local choices = {}
   for _, m in ipairs(MODES) do
     choices[#choices + 1] = { m.label, m.id }
@@ -323,8 +331,17 @@ return function(mod)
 
   local registered, skipped = 0, 0
   local hasArt = {}
+  local icons = mod.content.icons
 
-  for _, name in ipairs(SPECIES) do
+  local function replaceOrRegister(id, value)
+    if icons:get(id) ~= nil then
+      icons:override(id, value)
+    else
+      icons:register(id, value)
+    end
+  end
+
+  for dex, name in ipairs(SPECIES) do
     local iconPath = mode.folder .. "/" .. name .. ".png"
 
     -- Fall back to the default mode's art if the selected mode is
@@ -334,16 +351,26 @@ return function(mod)
     end
 
     if mod:read(iconPath) then
-      -- Always override, never register: another mod (PokePCFollowers,
-      -- Kanto Reforged, etc.) may register/patch this same species id.
-      -- register() would collide with whatever another mod queues for
-      -- this id at merge time -- see CHIKORITA/Kanto Reforged and
-      -- BULBASAUR/PokePCFollowers reports. override() has no existence
-      -- check, so it's safe unconditionally and always wins the merge.
-      mod.content.icons:override(name, {
-        image = mod.assets:path(iconPath),
-        frames = 2,
-      })
+      if isGen2 then
+        -- Gold separates icon sheets from per-species assignments.  Give each
+        -- species its own two-frame sheet, then point the species at that id.
+        local iconId = "ICON_UNIQUE_" .. string.format("%03d", dex)
+        replaceOrRegister(iconId, {
+          id = iconId,
+          image = mod.assets:path(iconPath),
+          width = 16,
+          height = 32,
+          frames = 2,
+        })
+        icons:override(name, iconId)
+      else
+        -- The optional dependency places us after other icon providers, and
+        -- override() makes this assignment the final Gen 1 party icon.
+        icons:override(name, {
+          image = mod.assets:path(iconPath),
+          frames = 2,
+        })
+      end
       registered = registered + 1
       hasArt[name] = true
     else
@@ -352,37 +379,58 @@ return function(mod)
   end
 
   -- Only modes 2 and 3 need the trueColor patch. Mode 1 relies on the
-  -- normal palette-driven recolor, exactly like vanilla icons, and
-  -- deliberately never touches PartyMenu or PaletteFX at all.
+  -- normal palette-driven recolor, exactly like vanilla icons.
   local patchOk, patchErr = true, nil
   if mode.id ~= "original" then
     patchOk, patchErr = pcall(function()
       local PartyMenu = require("src.ui.PartyMenu")
       local PaletteFX = require("src.render.PaletteFX")
+      local state = PartyMenu.__uniqueMenuIconsPartyMenu
+      if not state then
+        state = { originalDraw = PartyMenu.draw }
+        state.wrapperDraw = function(self, ...)
+          local result = state.originalDraw and state.originalDraw(self, ...)
+          if state.afterDraw then pcall(state.afterDraw, self) end
+          return result
+        end
+        PartyMenu.draw = state.wrapperDraw
+        PartyMenu.__uniqueMenuIconsPartyMenu = state
+      end
 
-      if PartyMenu._uniqueMenuIconsTrueColorWrapped then return end
-
-      local origDraw = PartyMenu.draw
-      function PartyMenu:draw(...)
-        origDraw(self, ...)
-
+      -- Refresh the callback rather than adding another wrapper on reload.
+      state.afterDraw = function(self)
         local party = self.party or (self.game and self.game.save and self.game.save.party)
         if type(party) ~= "table" then return end
 
         for i, mon in ipairs(party) do
           if mon and hasArt[mon.species] then
-            local y = PartyMenu.entryY(i)
-            PaletteFX.markTrueColor(8, y, 16, 16)
+            local x, y
+            if isGen2 then
+              x = i == self.index and 8 or 0
+              local clock = tonumber(self.clock) or 0
+              local bob = i == self.index and
+                ((math.floor(clock / 16) % 2 == 1) and -2 or 0) or 0
+              y = 4 + (i - 1) * 16 + bob
+            else
+              x = 8
+              y = PartyMenu.entryY(i)
+            end
+            PaletteFX.markTrueColor(x, y, 16, 16)
           end
         end
       end
-
-      PartyMenu._uniqueMenuIconsTrueColorWrapped = true
     end)
 
     if not patchOk then
       mod.log:warn("unique_menu_icons: trueColor icon patch failed: %s", tostring(patchErr))
     end
+  else
+    -- A previous hot-loaded colored mode may have installed the stable wrapper.
+    -- Disable only its color callback; leaving the wrapper in place avoids
+    -- disturbing wrappers installed by other mods around it.
+    local okParty, PartyMenu = pcall(require, "src.ui.PartyMenu")
+    local state = okParty and PartyMenu.__uniqueMenuIconsPartyMenu
+    if state then state.afterDraw = nil end
   end
 
   mod.log:info(
