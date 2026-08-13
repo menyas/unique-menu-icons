@@ -306,6 +306,81 @@ return function(mod)
   local GameVersion = require("src.core.GameVersion")
   local isGen2 = GameVersion.generation() == 2
 
+  -- Engine gaps affecting mod-options persistence on a Gold boot -- our
+  -- ICON COLOR MODE choice was silently not saving, traced to these three
+  -- (confirmed against Kanto Reforged's own host.lua, which hits and
+  -- documents the same gaps):
+  --   1. Game2 has persistOptions but the Mod Manager always calls
+  --      writeOptions (the Gen 1-only name) -- the call just doesn't
+  --      exist on Gold, so nothing happens.
+  --   2. Game:writeOptions (Gen 1's own) can persist a stale copy of
+  --      save.options.modOptions instead of the live table.
+  --   3. Gold's Save.saveOptions nests everything under its own
+  --      OPTIONS_KEY; the Loader reads modOptions back from the file's
+  --      top level, so even a successful persistOptions call can end up
+  --      somewhere the next boot never looks.
+  -- Guarded so this is a no-op if the method already exists -- safe to
+  -- carry even when Kanto Reforged (or any other mod with the same fix)
+  -- is also installed; whichever mod's shim lands first wins, harmlessly.
+  pcall(function()
+    local Game2 = require("src.core.Game2")
+    if type(Game2) == "table" and type(Game2.writeOptions) ~= "function"
+        and type(Game2.persistOptions) == "function" then
+      function Game2:writeOptions()
+        return self:persistOptions()
+      end
+    end
+  end)
+
+  pcall(function()
+    local Game = require("src.core.Game")
+    if type(Game) == "table" and not Game.__uniqueMenuIconsWriteOptsFixed then
+      local orig = Game.writeOptions
+      if type(orig) == "function" then
+        function Game:writeOptions()
+          if self.mods and self.mods.modOptions and self.save
+              and self.save.options then
+            self.save.options.modOptions = self.mods.modOptions
+          end
+          return orig(self)
+        end
+        Game.__uniqueMenuIconsWriteOptsFixed = true
+      end
+    end
+  end)
+
+  pcall(function()
+    local Save = require("src.core.gen2.Save")
+    if type(Save) == "table" and not Save.__uniqueMenuIconsModOptsLifted then
+      local orig = Save.saveOptions
+      if type(orig) == "function" then
+        Save.saveOptions = function(options, fs)
+          if type(options) ~= "table" then return orig(options, fs) end
+          local ok, SaveData = pcall(require, "src.core.SaveData")
+          if not ok then return orig(options, fs) end
+          local file = SaveData.loadOptions(fs) or {}
+          local block = {}
+          for key, value in pairs(options) do block[key] = value end
+          file[Save.OPTIONS_KEY] = block
+          if type(options.modOptions) == "table" then
+            file.modOptions = file.modOptions or {}
+            for modId, bucket in pairs(options.modOptions) do
+              if type(bucket) == "table" then
+                file.modOptions[modId] = file.modOptions[modId] or {}
+                for k, v in pairs(bucket) do
+                  file.modOptions[modId][k] = v
+                end
+              end
+            end
+          end
+          SaveData.saveOptions(file, fs)
+          return true
+        end
+        Save.__uniqueMenuIconsModOptsLifted = true
+      end
+    end
+  end)
+
   -- Compatibility capability consumed by PokePCFollowers 0.8.1+.  The
   -- optional dependency keeps this mod later in the load order, so its icon
   -- assignments win while PokePC retains ownership of overworld followers.
@@ -378,59 +453,87 @@ return function(mod)
     end
   end
 
-  -- Only modes 2 and 3 need the trueColor patch. Mode 1 relies on the
-  -- normal palette-driven recolor, exactly like vanilla icons.
+  -- Only modes 2 and 3 need a patch. Mode 1 relies on the normal
+  -- palette-driven recolor, exactly like vanilla icons, on both games.
   local patchOk, patchErr = true, nil
   if mode.id ~= "original" then
-    patchOk, patchErr = pcall(function()
-      local PartyMenu = require("src.ui.PartyMenu")
-      local PaletteFX = require("src.render.PaletteFX")
-      local state = PartyMenu.__uniqueMenuIconsPartyMenu
-      if not state then
-        state = { originalDraw = PartyMenu.draw }
-        state.wrapperDraw = function(self, ...)
-          local result = state.originalDraw and state.originalDraw(self, ...)
-          if state.afterDraw then pcall(state.afterDraw, self) end
-          return result
-        end
-        PartyMenu.draw = state.wrapperDraw
-        PartyMenu.__uniqueMenuIconsPartyMenu = state
-      end
-
-      -- Refresh the callback rather than adding another wrapper on reload.
-      state.afterDraw = function(self)
-        local party = self.party or (self.game and self.game.save and self.game.save.party)
-        if type(party) ~= "table" then return end
-
-        for i, mon in ipairs(party) do
-          if mon and hasArt[mon.species] then
-            local x, y
-            if isGen2 then
-              x = i == self.index and 8 or 0
-              local clock = tonumber(self.clock) or 0
-              local bob = i == self.index and
-                ((math.floor(clock / 16) % 2 == 1) and -2 or 0) or 0
-              y = 4 + (i - 1) * 16 + bob
+    if isGen2 then
+      -- Gold's PartyMenu:drawIcon (src/ui/gen2/PartyMenu.lua) always runs
+      -- the whole list through one shared GbcPalette shader when
+      -- self.palettes.partyMenu[1] is set -- there is no per-icon
+      -- trueColor zone to mark here, unlike Gen 1. The only way to get a
+      -- literal-color icon out of it is to make that lookup miss for the
+      -- species we have art for, so it falls into drawIcon's own
+      -- unshaded `else paint()` branch. Scoped to exactly the one call:
+      -- self.palettes is saved and restored around it, never left nil.
+      patchOk, patchErr = pcall(function()
+        local GoldPartyMenu = require("src.ui.gen2.PartyMenu")
+        local state = GoldPartyMenu.__uniqueMenuIconsGoldPartyMenu
+        if not state then
+          state = { originalDrawIcon = GoldPartyMenu.drawIcon }
+          state.wrapperDrawIcon = function(self, mon, px, py)
+            if mon and state.hasArt and state.hasArt[mon.species] then
+              local savedPalettes = self.palettes
+              self.palettes = nil
+              local ok, err = pcall(state.originalDrawIcon, self, mon, px, py)
+              self.palettes = savedPalettes
+              if not ok then error(err, 0) end
             else
-              x = 8
-              y = PartyMenu.entryY(i)
+              state.originalDrawIcon(self, mon, px, py)
             end
-            PaletteFX.markTrueColor(x, y, 16, 16)
+          end
+          GoldPartyMenu.drawIcon = state.wrapperDrawIcon
+          GoldPartyMenu.__uniqueMenuIconsGoldPartyMenu = state
+        end
+        state.hasArt = hasArt
+      end)
+    else
+      patchOk, patchErr = pcall(function()
+        local PartyMenu = require("src.ui.PartyMenu")
+        local PaletteFX = require("src.render.PaletteFX")
+        local state = PartyMenu.__uniqueMenuIconsPartyMenu
+        if not state then
+          state = { originalDraw = PartyMenu.draw }
+          state.wrapperDraw = function(self, ...)
+            local result = state.originalDraw and state.originalDraw(self, ...)
+            if state.afterDraw then pcall(state.afterDraw, self) end
+            return result
+          end
+          PartyMenu.draw = state.wrapperDraw
+          PartyMenu.__uniqueMenuIconsPartyMenu = state
+        end
+
+        -- Refresh the callback rather than adding another wrapper on reload.
+        state.afterDraw = function(self)
+          local party = self.party or (self.game and self.game.save and self.game.save.party)
+          if type(party) ~= "table" then return end
+
+          for i, mon in ipairs(party) do
+            if mon and hasArt[mon.species] then
+              PaletteFX.markTrueColor(8, PartyMenu.entryY(i), 16, 16)
+            end
           end
         end
-      end
-    end)
+      end)
+    end
 
     if not patchOk then
       mod.log:warn("unique_menu_icons: trueColor icon patch failed: %s", tostring(patchErr))
     end
   else
-    -- A previous hot-loaded colored mode may have installed the stable wrapper.
-    -- Disable only its color callback; leaving the wrapper in place avoids
-    -- disturbing wrappers installed by other mods around it.
-    local okParty, PartyMenu = pcall(require, "src.ui.PartyMenu")
-    local state = okParty and PartyMenu.__uniqueMenuIconsPartyMenu
-    if state then state.afterDraw = nil end
+    -- A previous hot-loaded colored mode may have installed a stable
+    -- wrapper (either game's). Disable only its color callback/data;
+    -- leaving the wrapper in place avoids disturbing wrappers installed
+    -- by other mods around it.
+    if isGen2 then
+      local okParty, GoldPartyMenu = pcall(require, "src.ui.gen2.PartyMenu")
+      local state = okParty and GoldPartyMenu.__uniqueMenuIconsGoldPartyMenu
+      if state then state.hasArt = nil end
+    else
+      local okParty, PartyMenu = pcall(require, "src.ui.PartyMenu")
+      local state = okParty and PartyMenu.__uniqueMenuIconsPartyMenu
+      if state then state.afterDraw = nil end
+    end
   end
 
   mod.log:info(
